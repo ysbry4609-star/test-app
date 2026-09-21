@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>أداة تصدير تقارير WeCare</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -42,9 +42,7 @@
     background: linear-gradient(135deg,#1b6b8c,#2f9bc4); color:#fff; font-size:15px; font-weight:700;
     cursor:pointer; transition: opacity .15s;
   }
-  button.secondary {
-    background: #eef3f6; color:#1b6b8c; margin-top: 8px;
-  }
+  button.secondary { background: #eef3f6; color:#1b6b8c; margin-top: 8px; }
   button:hover { opacity:.92; }
   button:disabled { opacity:.6; cursor:not-allowed; }
   .msg { margin-top:16px; padding:12px 14px; border-radius:10px; font-size:13.5px; display:none; line-height:1.6; }
@@ -53,7 +51,6 @@
   .msg.loading { background:#eef6fb; color:#1b6b8c; display:block; }
   .foot { margin-top: 18px; font-size: 11.5px; color:#98a2ae; text-align:center; }
 
-  /* stats card */
   .stat-total {
     display:flex; align-items:baseline; gap:8px; background:#eef6fb; border-radius:12px;
     padding:14px 16px; margin-bottom:16px;
@@ -71,7 +68,6 @@
   .charts-grid { display:flex; flex-direction:column; gap:20px; margin-top:18px; }
   .chart-box { position:relative; height:220px; }
 
-  /* column selection */
   .col-actions { display:flex; gap:8px; margin-bottom:10px; }
   .col-actions button {
     margin-top:0; padding:8px; font-size:12.5px; background:#eef3f6; color:#1b6b8c; font-weight:600;
@@ -83,7 +79,6 @@
   .col-item:hover { background:#f8fafb; }
   .col-item input { width:auto; }
 
-  /* AI card */
   .ai-note { font-size:12px; color:#98a2ae; line-height:1.7; margin-top:4px; }
   .ai-note a { color:#2f9bc4; }
   .progress-wrap { background:#eef3f6; border-radius:8px; height:8px; margin-top:14px; overflow:hidden; display:none; }
@@ -93,7 +88,6 @@
 <body>
 <div class="wrap">
 
-  <!-- 1) إعدادات الاتصال وجلب البيانات -->
   <div class="card">
     <h1>📊 أداة تصدير تقارير WeCare</h1>
     <div class="sub">أداة شخصية — بتسحب الحالات من جوجل شيتس، تعرض إحصائيات، وتخليك تختار الأعمدة قبل ما تصدّر ملف Excel.</div>
@@ -124,10 +118,9 @@
     <button id="fetchBtn" onclick="doFetch()">🔍 جلب البيانات وتحميل Excel تلقائيًا</button>
 
     <div class="msg" id="msg"></div>
-    <div class="foot">البيانات بتتسحب مباشرة من جوجل شيتس بتاعك — الملف بيتحمّل على جهازك فقط.<br>الإصدار: v1.2 — تصدير تلقائي</div>
+    <div class="foot">البيانات بتتسحب مباشرة من جوجل شيتس بتاعك — الملف بيتحمّل على جهازك فقط.<br>الإصدار: v1.3 — تصدير تلقائي</div>
   </div>
 
-  <!-- 2) الإحصائيات -->
   <div class="card" id="statsCard" style="display:none;">
     <h2>📈 إحصائيات الحالات</h2>
 
@@ -147,7 +140,6 @@
     </div>
   </div>
 
-  <!-- 2.5) تصنيف الحالات بالذكاء الاصطناعي -->
   <div class="card" id="aiCard" style="display:none;">
     <h2>🤖 تصنيف الحالات بالذكاء الاصطناعي (اختياري)</h2>
     <div class="sub" style="margin-bottom:14px;">لو الحالات مش متصنفة أصلاً، الأداة تقدر تقرأ وصف كل حالة وتحدّد تصنيفها (بسيطة / متوسطة / حرجة) تلقائيًا وقت التصدير بس — من غير ما تتسجل في الشيت.</div>
@@ -157,7 +149,7 @@
     <div class="ai-note">
       مفتاح مجاني من Google — روح على
       <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
-      وسجّل دخول بحساب Google، دوس "Create API key"، وانسخه هنا. المفتاح بيتبعت لجوجل بس عشان التصنيف، ومش بيتسجل في أي حتة.
+      وسجّل دخول بحساب Google، دوس "Create API key"، وانسخه هنا.
     </div>
 
     <label>عمود وصف الحالة / الشكوى (اللي هيتقرأ عشان التصنيف)</label>
@@ -168,7 +160,6 @@
     <div class="msg" id="aiMsg"></div>
   </div>
 
-  <!-- 3) اختيار الأعمدة والتصدير -->
   <div class="card" id="columnsCard" style="display:none;">
     <h2>🗂️ اختيار الأعمدة المطلوبة في ملف Excel</h2>
     <div class="sub" style="margin-bottom:12px;">الملف نزل تلقائيًا بالفعل بكل الأعمدة. لو عايز نسخة مخصصة، عدّل التحديد ثم اضغط تصدير.</div>
@@ -185,18 +176,14 @@
 </div>
 
 <script>
-let fetchedData = null;   // { headers, rows }
+let fetchedData = null;
 let pieChartInst = null;
 let barChartInst = null;
-let aiClassifications = null; // مصفوفة موازية للصفوف: تصنيف كل حالة بالذكاء الاصطناعي
+let aiClassifications = null;
 
 const CHART_COLORS = ['#2f9bc4','#e67e22','#c0392b','#27ae60','#8e44ad','#f1c40f','#16a085','#7f8c8d','#2980b9','#d35400'];
-
-// كلمات مفتاحية للتخمين التلقائي لعمود التصنيف/التراياج
 const TRIAGE_KEYWORDS = ['تصنيف','تراياج','triage','الخطورة','درجة الحالة','مستوى الحالة'];
-// كلمات مفتاحية للتخمين التلقائي لعمود وصف الحالة/الشكوى
 const DESC_KEYWORDS = ['وصف','الشكوى','الأعراض','الحالة','ملخص','تفاصيل','التشخيص','الشكوي'];
-
 const GEMINI_MODEL = 'gemini-flash-latest';
 const AI_BATCH_SIZE = 25;
 
@@ -209,12 +196,13 @@ async function doFetch(){
   const start = document.getElementById('startDate').value;
   const end = document.getElementById('endDate').value;
 
+  // ✅ الإصلاح: شيلنا msg.style.display = 'none' — الكلاس .msg أصلاً فيه display:none
   msg.className = 'msg';
+
   document.getElementById('statsCard').style.display = 'none';
   document.getElementById('aiCard').style.display = 'none';
   document.getElementById('columnsCard').style.display = 'none';
   document.getElementById('exportMsg').className = 'msg';
-  document.getElementById('exportMsg').style.display = 'none';
   aiClassifications = null;
 
   if(!scriptUrl || !key || !start || !end){
@@ -251,9 +239,9 @@ async function doFetch(){
     buildTriageSelect();
     buildDescSelect();
     buildColumnList();
-    updateStats();
+    updateStats();  // دلوقتي آمنة حتى لو Chart.js فشل
 
-    document.getElementById('aiMsg').className = 'msg'; document.getElementById('aiMsg').style.display = 'none';
+    document.getElementById('aiMsg').className = 'msg';
     document.getElementById('aiProgressWrap').style.display = 'none';
     document.getElementById('aiProgressBar').style.width = '0%';
 
@@ -261,9 +249,14 @@ async function doFetch(){
     document.getElementById('aiCard').style.display = 'block';
     document.getElementById('columnsCard').style.display = 'block';
 
-    // ✨ تصدير تلقائي بمجرد نجاح السحب
     showMsg(msg, 'ok', `✅ تم جلب ${data.rows.length} حالة بنجاح — جاري تحميل ملف Excel...`);
-    doFinalExport();
+
+    // ✨ تصدير تلقائي — داخل try/catch منفصل عشان لو فشل ما يأثرش على الرسالة
+    try {
+      doFinalExport();
+    } catch(exportErr){
+      showMsg(msg, 'err', '⚠️ تم جلب البيانات بس فشل التصدير: ' + exportErr.message);
+    }
 
   } catch(err){
     showMsg(msg, 'err', '❌ حصل خطأ في الاتصال بالسكربت: ' + err.message);
@@ -281,8 +274,6 @@ function buildTriageSelect(){
     opt.textContent = h;
     sel.appendChild(opt);
   });
-
-  // تخمين عمود التصنيف تلقائياً
   let guessIndex = fetchedData.headers.findIndex(h =>
     TRIAGE_KEYWORDS.some(k => h.toLowerCase().includes(k.toLowerCase()))
   );
@@ -325,7 +316,7 @@ function addAIColumnCheckbox(){
     if(existing) existing.remove();
     return;
   }
-  if(existing) return; // already added
+  if(existing) return;
   const row = document.createElement('label');
   row.className = 'col-item';
   row.innerHTML = `<input type="checkbox" data-col="__ai__" checked> <span>🤖 تصنيف الذكاء الاصطناعي</span>`;
@@ -353,10 +344,8 @@ function updateStats(){
   const total = fetchedData.rows.length;
   document.getElementById('totalCount').textContent = total;
 
-  // ترتيب تنازلي حسب العدد
   const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
 
-  // قائمة التفصيل
   const listEl = document.getElementById('breakdownList');
   listEl.innerHTML = '';
   entries.forEach(([name, count], i) => {
@@ -376,10 +365,21 @@ function updateStats(){
   const values = entries.map(e => e[1]);
   const colors = entries.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
 
-  drawCharts(labels, values, colors);
+  // ✅ الإصلاح: لفينا drawCharts في try/catch عشان فشل Chart.js ما يوقفش التصدير
+  try {
+    drawCharts(labels, values, colors);
+  } catch(chartErr){
+    console.warn('تعذّر رسم المخططات (Chart.js مش محمّل؟):', chartErr.message);
+  }
 }
 
 function drawCharts(labels, values, colors){
+  // ✅ الإصلاح: نتأكد إن Chart.js محمّل قبل ما نستخدمه
+  if(typeof Chart === 'undefined'){
+    console.warn('Chart.js مش محمّل — تخطّي الرسوم البيانية');
+    return;
+  }
+
   const pieCtx = document.getElementById('pieChart').getContext('2d');
   const barCtx = document.getElementById('barChart').getContext('2d');
 
@@ -474,7 +474,7 @@ async function runAIClassification(){
   const apiKey = document.getElementById('geminiKey').value.trim();
   const descIndex = parseInt(document.getElementById('descColumn').value, 10);
 
-  msg.className = 'msg'; msg.style.display = 'none';
+  msg.className = 'msg';
 
   if(!fetchedData){
     showMsg(msg, 'err', '⚠️ لازم تجيب البيانات الأول.');
@@ -504,7 +504,6 @@ async function runAIClassification(){
     aiClassifications = results;
     showMsg(msg, 'ok', `✅ تم تصنيف ${results.length} حالة بنجاح.`);
 
-    // إضافة خيار "تصنيف الذكاء الاصطناعي" لقائمة عمود الإحصاء واختياره تلقائيًا
     const triageSel = document.getElementById('triageColumn');
     let aiOpt = triageSel.querySelector('option[value="__ai__"]');
     if(!aiOpt){
@@ -527,7 +526,7 @@ async function runAIClassification(){
 
 function doFinalExport(){
   const msg = document.getElementById('exportMsg');
-  msg.className = 'msg'; msg.style.display = 'none';
+  msg.className = 'msg';
 
   if(!fetchedData){
     showMsg(msg, 'err', '⚠️ لازم تجيب البيانات الأول.');
