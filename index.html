@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>أداة تصدير تقارير WeCare</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; }
@@ -15,10 +15,7 @@
     display: flex; align-items: flex-start; justify-content: center; padding: 24px;
   }
   .wrap { max-width: 560px; width:100%; display:flex; flex-direction:column; gap:16px; }
-  .card {
-    background: #ffffff; border-radius: 16px; padding: 28px; width: 100%;
-    box-shadow: 0 20px 50px rgba(0,0,0,.35);
-  }
+  .card { background:#fff; border-radius:16px; padding:28px; width:100%; box-shadow:0 20px 50px rgba(0,0,0,.35); }
   h1 { font-size: 20px; margin: 0 0 4px; color: #10334a; }
   h2 { font-size: 16px; margin: 0 0 14px; color: #10334a; }
   .sub { color: #667; font-size: 13px; margin-bottom: 24px; }
@@ -28,6 +25,7 @@
     font-size: 14px; font-family: inherit; background:#f8fafb;
   }
   input:focus, select:focus { outline: none; border-color: #2f9bc4; background:#fff; }
+  input[type="file"] { padding: 8px; }
   .row2 { display:flex; gap:12px; }
   .row2 > div { flex:1; }
   button {
@@ -93,21 +91,25 @@
   .ai-note a { color:#2f9bc4; }
   .progress-wrap { background:#eef3f6; border-radius:8px; height:8px; margin-top:14px; overflow:hidden; display:none; }
   .progress-bar { height:100%; background:linear-gradient(135deg,#1b6b8c,#2f9bc4); width:0%; transition: width .25s; }
+  .logo-preview { max-width:80px; max-height:80px; margin-top:8px; border-radius:8px; border:1.5px solid #dfe4ea; display:none; }
+  .logo-saved-badge {
+    display:inline-block; margin-inline-start:6px; background:#e8f7ee; color:#1e7a41;
+    font-size:10.5px; padding:2px 8px; border-radius:10px;
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- 1) الاتصال والجلب -->
   <div class="card">
     <h1>📊 أداة تصدير تقارير WeCare</h1>
-    <div class="sub">أداة شخصية — بتسحب الحالات من جوجل شيتس، تعرض إحصائيات لأكتر من عمود، وتصدّر ملف Excel فيه صفحة لكل إحصاء.</div>
+    <div class="sub">أداة شخصية — سحب + إحصائيات متعددة + تصنيف AI + تصدير Excel منسّق.</div>
 
     <label>رابط السكربت (SCRIPT_URL)</label>
     <input type="text" id="scriptUrl" value="https://script.google.com/macros/s/AKfycbxTHJowoY7X2LYhsbe52UppJu1k_AAvER3aW9Mt9GKSR2WZn6pXuilfPZBJWsdlvFvK/exec">
 
     <label>مفتاح الوصول</label>
-    <input type="password" id="accessKey" value="1253" placeholder="اكتب المفتاح">
+    <input type="password" id="accessKey" value="1253">
 
     <label>الموقع</label>
     <select id="site">
@@ -116,26 +118,23 @@
     </select>
 
     <div class="row2">
-      <div>
-        <label>من تاريخ</label>
-        <input type="date" id="startDate">
-      </div>
-      <div>
-        <label>إلى تاريخ</label>
-        <input type="date" id="endDate">
-      </div>
+      <div><label>من تاريخ</label><input type="date" id="startDate"></div>
+      <div><label>إلى تاريخ</label><input type="date" id="endDate"></div>
     </div>
 
-    <button id="fetchBtn" onclick="doFetch()">🔍 جلب البيانات وتحميل Excel تلقائيًا</button>
+    <label>شعار الشركة <span id="logoStatus" class="logo-saved-badge" style="display:none;">✅ محفوظ</span></label>
+    <input type="file" id="logoInput" accept="image/png,image/jpeg">
+    <img id="logoPreview" class="logo-preview" alt="معاينة الشعار">
+    <button type="button" id="clearLogoBtn" class="secondary" style="display:none; margin-top:8px;" onclick="clearLogo()">🗑️ مسح اللوجو المحفوظ</button>
+
+    <button id="fetchBtn" onclick="doFetch()">🔍 جلب البيانات وتحميل Excel</button>
 
     <div class="msg" id="msg"></div>
-    <div class="foot">البيانات بتتسحب مباشرة من جوجل شيتس بتاعك — الملف بيتحمّل على جهازك فقط.<br>الإصدار: v2.0 — إحصائيات متعددة + Groq AI</div>
+    <div class="foot">البيانات بتتسحب مباشرة من جوجل شيتس — الملف بيتحمّل على جهازك فقط.<br>الإصدار: v3.1 — لوجو محفوظ تلقائيًا</div>
   </div>
 
-  <!-- 2) الإحصائيات -->
   <div class="card" id="statsCard" style="display:none;">
     <h2>📈 إحصائيات الحالات</h2>
-
     <label>الأعمدة المطلوب إحصاؤها (اختر واحدة أو أكثر)</label>
     <div class="col-actions">
       <button onclick="setAllStatCols(true)">تحديد الكل</button>
@@ -145,27 +144,39 @@
 
     <div class="stat-total">
       <div class="num" id="totalCount">0</div>
-      <div class="lbl">إجمالي عدد الحالات في الفترة المحددة</div>
+      <div class="lbl">إجمالي عدد الحالات</div>
     </div>
-
     <div id="statsOutput"></div>
   </div>
 
-  <!-- 3) الذكاء الاصطناعي -->
   <div class="card" id="aiCard" style="display:none;">
     <h2>🤖 تصنيف الحالات بالذكاء الاصطناعي (اختياري)</h2>
-    <div class="sub" style="margin-bottom:14px;">لو الحالات مش متصنفة أصلاً، الأداة تقدر تقرأ وصف كل حالة وتحدّد تصنيفها (بسيطة / متوسطة / حرجة) تلقائيًا وقت التصدير بس — من غير ما تتسجل في الشيت.</div>
+    <div class="sub" style="margin-bottom:14px;">يقرأ وصف كل حالة ويصنّفها (بسيطة / متوسطة / حرجة) — بدون تسجيل في الشيت.</div>
 
-    <label>مفتاح Groq API</label>
+    <label>مزود الخدمة</label>
+    <select id="aiProvider">
+      <option value="groq">Groq (موصى به — سريع ومجاني)</option>
+    </select>
+
+    <label>الموديل</label>
+    <select id="aiModel">
+      <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (أسرع)</option>
+      <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (أدق)</option>
+      <option value="gemma2-9b-it">gemma2-9b-it</option>
+      <option value="meta-llama/llama-4-scout-17b-16e-instruct">llama-4-scout-17b (جديد)</option>
+    </select>
+
+    <label>مفتاح Groq API <span id="keyStatus" class="logo-saved-badge" style="display:none;">✅ محفوظ</span></label>
     <input type="password" id="groqKey" placeholder="gsk_...">
     <div class="ai-note">
-      مفتاح مجاني وسخي — روح على
+      مفتاح مجاني من
       <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>
-      وسجّل بحساب Google، دوس "Create API Key"، وانسخه هنا.
-      <br>✅ رصيد مجاني يومي: 14,400 طلب — أسرع بكتير من Gemini.
+      — سجّل بحساب Google، دوس "Create API Key"، وانسخه.
+      <br>🔒 المفتاح بيتحفظ في متصفحك بس — مش بيتبعت لأي حد غير Groq.
     </div>
+    <button type="button" id="clearKeyBtn" class="secondary" style="display:none; margin-top:8px;" onclick="clearGroqKey()">🗑️ مسح المفتاح المحفوظ</button>
 
-    <label>عمود وصف الحالة / الشكوى (اللي هيتقرأ عشان التصنيف)</label>
+    <label>عمود وصف الحالة / الشكوى</label>
     <select id="descColumn"></select>
 
     <button id="aiBtn" onclick="runAIClassification()">🤖 صنّف الحالات الآن</button>
@@ -173,10 +184,9 @@
     <div class="msg" id="aiMsg"></div>
   </div>
 
-  <!-- 4) اختيار الأعمدة والتصدير -->
   <div class="card" id="columnsCard" style="display:none;">
-    <h2>🗂️ اختيار الأعمدة المطلوبة في صفحة "رصد الحالات"</h2>
-    <div class="sub" style="margin-bottom:12px;">الملف نزل تلقائيًا بالفعل. لو عايز نسخة مخصصة بأعمدة مختلفة، عدّل التحديد ثم اضغط تصدير.</div>
+    <h2>🗂️ أعمدة صفحة "رصد الحالات"</h2>
+    <div class="sub" style="margin-bottom:12px;">الملف نزل تلقائيًا. لو عايز نسخة مخصصة، عدّل التحديد ثم اضغط تصدير.</div>
     <div class="col-actions">
       <button onclick="setAllColumns(true)">تحديد الكل</button>
       <button onclick="setAllColumns(false)">إلغاء التحديد</button>
@@ -193,16 +203,150 @@
 let fetchedData = null;
 let aiClassifications = null;
 let chartInstances = {};
+let logoBase64 = null;
+let logoExtension = 'png';
 
 const CHART_COLORS = ['#2f9bc4','#e67e22','#c0392b','#27ae60','#8e44ad','#f1c40f','#16a085','#7f8c8d','#2980b9','#d35400'];
 const TRIAGE_KEYWORDS = ['تصنيف','تراياج','triage','الخطورة','درجة الحالة','مستوى الحالة'];
 const DESC_KEYWORDS = ['وصف','الشكوى','الأعراض','الحالة','ملخص','تفاصيل','التشخيص','الشكوي'];
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
-const AI_BATCH_SIZE = 25;
+const AI_BATCH_SIZE = 20;
+const COMPANY_FOOTER = 'Emergency and Critical Care Department — WeCare Company';
+const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
-// ═══════════════════════════════════════════════════════════
-//  1) جلب البيانات
-// ═══════════════════════════════════════════════════════════
+const LOGO_STORAGE_KEY = 'wecare_logo_v1';
+const GROQ_KEY_STORAGE = 'wecare_groq_key_v1';
+
+// ═══════════════════════ اللوجو — حفظ تلقائي في المتصفح ═══════════════════════
+function loadSavedLogo(){
+  try {
+    const saved = localStorage.getItem(LOGO_STORAGE_KEY);
+    if(!saved) return false;
+    const obj = JSON.parse(saved);
+    if(!obj.base64) return false;
+
+    logoBase64 = obj.base64;
+    logoExtension = obj.extension || 'png';
+
+    const preview = document.getElementById('logoPreview');
+    preview.src = `data:image/${logoExtension};base64,${logoBase64}`;
+    preview.style.display = 'block';
+    document.getElementById('clearLogoBtn').style.display = 'block';
+    document.getElementById('logoStatus').style.display = 'inline-block';
+    return true;
+  } catch(e) {
+    console.warn('تعذّر تحميل اللوجو:', e);
+    return false;
+  }
+}
+
+function saveLogoToBrowser(base64, extension){
+  try {
+    localStorage.setItem(LOGO_STORAGE_KEY, JSON.stringify({ base64, extension }));
+    return true;
+  } catch(e) {
+    console.warn('تعذّر حفظ اللوجو:', e);
+    return false;
+  }
+}
+
+function clearLogo(){
+  if(!confirm('متأكد إنك عايز تمسح اللوجو المحفوظ؟')) return;
+  localStorage.removeItem(LOGO_STORAGE_KEY);
+  logoBase64 = null;
+  logoExtension = 'png';
+  document.getElementById('logoPreview').style.display = 'none';
+  document.getElementById('clearLogoBtn').style.display = 'none';
+  document.getElementById('logoStatus').style.display = 'none';
+  document.getElementById('logoInput').value = '';
+}
+
+document.getElementById('logoInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  const preview = document.getElementById('logoPreview');
+  const clearBtn = document.getElementById('clearLogoBtn');
+  const status = document.getElementById('logoStatus');
+
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    logoBase64 = reader.result.split(',')[1];
+    logoExtension = file.type.includes('png') ? 'png' : 'jpeg';
+    preview.src = reader.result;
+    preview.style.display = 'block';
+
+    const ok = saveLogoToBrowser(logoBase64, logoExtension);
+    const msg = document.getElementById('msg');
+    if(ok){
+      clearBtn.style.display = 'block';
+      status.style.display = 'inline-block';
+      showMsg(msg, 'ok', '✅ تم حفظ اللوجو في المتصفح — مش هتحتاج ترفعه تاني.');
+      setTimeout(() => { msg.className = 'msg'; }, 3000);
+    } else {
+      showMsg(msg, 'err', '⚠️ اللوجو اتحمّل بس مش اتحفظ — هتحتاج ترفعه كل مرة.');
+    }
+  };
+  reader.readAsDataURL(file);
+});
+
+// تحميل اللوجو المحفوظ عند فتح الصفحة
+loadSavedLogo();
+
+// ═══════════════════════ مفتاح Groq — حفظ تلقائي ═══════════════════════
+function loadSavedGroqKey(){
+  try {
+    const saved = localStorage.getItem(GROQ_KEY_STORAGE);
+    if(!saved) return false;
+    const obj = JSON.parse(saved);
+    if(!obj.key) return false;
+
+    document.getElementById('groqKey').value = obj.key;
+    document.getElementById('clearKeyBtn').style.display = 'block';
+    document.getElementById('keyStatus').style.display = 'inline-block';
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function saveGroqKey(key){
+  try {
+    localStorage.setItem(GROQ_KEY_STORAGE, JSON.stringify({ key }));
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function clearGroqKey(){
+  if(!confirm('متأكد إنك عايز تمسح المفتاح المحفوظ؟')) return;
+  localStorage.removeItem(GROQ_KEY_STORAGE);
+  document.getElementById('groqKey').value = '';
+  document.getElementById('clearKeyBtn').style.display = 'none';
+  document.getElementById('keyStatus').style.display = 'none';
+}
+
+document.getElementById('groqKey').addEventListener('input', (e) => {
+  const key = e.target.value.trim();
+  const clearBtn = document.getElementById('clearKeyBtn');
+  const status = document.getElementById('keyStatus');
+
+  if(key.length > 10 && key.startsWith('gsk_')){
+    const ok = saveGroqKey(key);
+    if(ok){
+      clearBtn.style.display = 'block';
+      status.style.display = 'inline-block';
+    }
+  } else if(key.length === 0){
+    clearBtn.style.display = 'none';
+    status.style.display = 'none';
+  }
+});
+
+// تحميل المفتاح المحفوظ عند فتح الصفحة
+loadSavedGroqKey();
+
+// ═══════════════════════ جلب البيانات ═══════════════════════
 async function doFetch(){
   const btn = document.getElementById('fetchBtn');
   const msg = document.getElementById('msg');
@@ -242,13 +386,13 @@ async function doFetch(){
       return;
     }
     if(!data.rows || data.rows.length === 0){
-      showMsg(msg, 'err', '⚠️ مفيش حالات مسجلة في الفترة دي لموقع "' + site + '".');
+      showMsg(msg, 'err', '⚠️ مفيش حالات مسجلة في الفترة دي.');
       return;
     }
 
     fetchedData = { headers: data.headers, rows: data.rows, site, start, end };
 
-    buildStatColumnsList();
+    buildStatColumnsList(true);
     buildDescSelect();
     buildColumnList();
     updateStats();
@@ -261,37 +405,34 @@ async function doFetch(){
     document.getElementById('aiCard').style.display = 'block';
     document.getElementById('columnsCard').style.display = 'block';
 
-    showMsg(msg, 'ok', `✅ تم جلب ${data.rows.length} حالة بنجاح — جاري تحميل ملف Excel...`);
+    showMsg(msg, 'ok', `✅ تم جلب ${data.rows.length} حالة — جاري تحميل ملف Excel...`);
 
-    try { doFinalExport(); }
-    catch(exportErr){ showMsg(msg, 'err', '⚠️ تم جلب البيانات بس فشل التصدير: ' + exportErr.message); }
+    try { await doFinalExport(); }
+    catch(exportErr){ showMsg(msg, 'err', '⚠️ جلب تمام بس التصدير فشل: ' + exportErr.message); }
 
   } catch(err){
-    showMsg(msg, 'err', '❌ حصل خطأ في الاتصال بالسكربت: ' + err.message);
+    showMsg(msg, 'err', '❌ خطأ في الاتصال: ' + err.message);
   } finally {
     btn.disabled = false;
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  2) قائمة أعمدة الإحصائيات (متعددة)
-// ═══════════════════════════════════════════════════════════
-function buildStatColumnsList(){
+// ═══════════════════════ قوائم الأعمدة ═══════════════════════
+function buildStatColumnsList(checkAll){
   const list = document.getElementById('statColsList');
   list.innerHTML = '';
 
-  // تخمين عمود التصنيف تلقائياً
   let guessIndex = fetchedData.headers.findIndex(h =>
     TRIAGE_KEYWORDS.some(k => h.toLowerCase().includes(k.toLowerCase()))
   );
-  if(guessIndex === -1) guessIndex = 0;
 
   fetchedData.headers.forEach((h, i) => {
     const uniqueCount = new Set(fetchedData.rows.map(r => (r[i] ?? '').toString().trim() || '(غير محدد)')).size;
+    const checked = checkAll ? 'checked' : (i === guessIndex ? 'checked' : '');
     const row = document.createElement('label');
     row.className = 'col-item';
     row.innerHTML = `
-      <input type="checkbox" data-stat-col="${i}" ${i === guessIndex ? 'checked' : ''}>
+      <input type="checkbox" data-stat-col="${i}" ${checked}>
       <span>${h}</span>
       <span class="unique-badge">${uniqueCount} قيمة</span>
     `;
@@ -302,12 +443,8 @@ function buildStatColumnsList(){
 
 function addAIStatColumn(){
   const list = document.getElementById('statColsList');
-  const existing = list.querySelector('[data-stat-col="__ai__"]');
-  if(!aiClassifications){
-    if(existing) existing.parentElement.remove();
-    return;
-  }
-  if(existing) return;
+  if(list.querySelector('[data-stat-col="__ai__"]')) return;
+  if(!aiClassifications) return;
   const row = document.createElement('label');
   row.className = 'col-item';
   row.innerHTML = `
@@ -369,18 +506,14 @@ function setAllColumns(state){
   document.querySelectorAll('#colList input[type="checkbox"]').forEach(cb => cb.checked = state);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  3) عرض الإحصائيات (متعدد الأعمدة)
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════ عرض الإحصائيات ═══════════════════════
 function updateStats(){
   if(!fetchedData) return;
 
-  const total = fetchedData.rows.length;
-  document.getElementById('totalCount').textContent = total;
+  document.getElementById('totalCount').textContent = fetchedData.rows.length;
 
   const output = document.getElementById('statsOutput');
 
-  // تنظيف الرسوم القديمة
   Object.values(chartInstances).forEach(inst => {
     if(inst.pie) try { inst.pie.destroy(); } catch(e){}
     if(inst.bar) try { inst.bar.destroy(); } catch(e){}
@@ -392,17 +525,16 @@ function updateStats(){
     .map(cb => cb.dataset.statCol);
 
   if(checkedCols.length === 0){
-    output.innerHTML = '<div class="sub" style="text-align:center;padding:20px;">اختر عمود واحد على الأقل لعرض الإحصائيات.</div>';
+    output.innerHTML = '<div class="sub" style="text-align:center;padding:20px;">اختر عمود واحد على الأقل.</div>';
     return;
   }
 
   checkedCols.forEach(colKey => renderStatBlock(output, colKey));
 }
 
-function renderStatBlock(container, colKey){
+function computeBreakdown(colKey){
   const isAI = colKey === '__ai__';
   const colIndex = isAI ? null : parseInt(colKey, 10);
-  const colName = isAI ? '🤖 تصنيف الذكاء الاصطناعي' : fetchedData.headers[colIndex];
 
   const counts = {};
   fetchedData.rows.forEach((r, idx) => {
@@ -414,6 +546,12 @@ function renderStatBlock(container, colKey){
 
   const total = fetchedData.rows.length;
   const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  return { entries, total, isAI, colIndex };
+}
+
+function renderStatBlock(container, colKey){
+  const { entries, total, isAI, colIndex } = computeBreakdown(colKey);
+  const colName = isAI ? '🤖 تصنيف الذكاء الاصطناعي' : fetchedData.headers[colIndex];
 
   const uid = 'stat_' + Math.random().toString(36).slice(2, 9);
   const block = document.createElement('div');
@@ -445,70 +583,55 @@ function renderStatBlock(container, colKey){
   if(typeof Chart === 'undefined') return;
 
   try {
-    const labels = entries.map(e => e[0]);
-    const values = entries.map(e => e[1]);
-    const colors = entries.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+    const labels = entries.slice(0, 15).map(e => e[0]);
+    const values = entries.slice(0, 15).map(e => e[1]);
+    const colors = labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
 
     const pie = new Chart(block.querySelector(`#${uid}_pie`).getContext('2d'), {
       type: 'pie',
       data: { labels, datasets: [{ data: values, backgroundColor: colors, borderColor:'#fff', borderWidth:2 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'bottom', labels: { font: { family: "'Segoe UI', Tahoma, Arial, sans-serif" } } },
-          title: { display: true, text: 'التوزيع', font: { size: 12 } }
-        }
-      }
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { font: { family: "'Segoe UI', Tahoma, Arial, sans-serif", size: 10 } } } } }
     });
 
     const bar = new Chart(block.querySelector(`#${uid}_bar`).getContext('2d'), {
       type: 'bar',
       data: { labels, datasets: [{ label: 'عدد الحالات', data: values, backgroundColor: colors }] },
-      options: {
-        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: 'العدد', font: { size: 12 } }
-        },
-        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
-      }
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
     });
 
     chartInstances[colKey] = { pie, bar };
-  } catch(e) {
-    console.warn('تعذّر رسم المخطط:', e.message);
-  }
+  } catch(e) { console.warn('رسم فشل:', e.message); }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  4) التصنيف بالذكاء الاصطناعي — Groq
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════ Groq AI ═══════════════════════
 function chunkArray(arr, size){
   const out = [];
   for(let i=0; i<arr.length; i+=size) out.push(arr.slice(i, i+size));
   return out;
 }
 
-async function classifyBatch(apiKey, texts){
-  const systemPrompt = `أنت مساعد فرز طبي (Triage) لخدمة إسعاف. مهمتك تصنيف كل حالة إلى واحدة من ثلاث فئات فقط: "بسيطة" أو "متوسطة" أو "حرجة".
-- "بسيطة" — حالة خفيفة لا تستدعي إسعاف.
-- "متوسطة" — تحتاج عناية عاجلة لكنها مستقرة.
-- "حرجة" — تهدد الحياة وتحتاج تدخل فوري.
+async function classifyBatch(apiKey, model, texts){
+  const systemPrompt = `أنت مساعد فرز طبي (Triage). صنّف كل حالة إلى واحدة من: "بسيطة" أو "متوسطة" أو "حرجة".
+- بسيطة: لا تستدعي إسعاف.
+- متوسطة: تحتاج عناية عاجلة لكن مستقرة.
+- حرجة: تهدد الحياة.
 لو النص فارغ أو غير مفهوم استخدم "متوسطة".
-يجب أن ترد بصيغة JSON فقط بالشكل: {"results": ["بسيطة", "حرجة", ...]} بنفس عدد وترتيب الحالات المُرسلة.`;
+رد بصيغة JSON فقط: {"results": ["بسيطة", "حرجة", ...]} بنفس العدد والترتيب.`;
 
-  const userPrompt = `الحالات (${texts.length} حالة):\n` +
-    texts.map((t,i) => `${i+1}. ${(t||'').toString().slice(0,300)}`).join('\n');
+  const userPrompt = `الحالات (${texts.length}):\n` +
+    texts.map((t,i) => `${i+1}. ${(t||'').toString().slice(0, 300)}`).join('\n');
 
-  const url = 'https://api.groq.com/openai/v1/chat/completions';
-  const res = await fetch(url, {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
     },
     body: JSON.stringify({
-      model: GROQ_MODEL,
+      model: model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
@@ -520,7 +643,7 @@ async function classifyBatch(apiKey, texts){
 
   if(!res.ok){
     const errBody = await res.text();
-    let errMsg = `Groq API error (${res.status})`;
+    let errMsg = `Groq (${res.status})`;
     try {
       const parsed = JSON.parse(errBody);
       errMsg = parsed.error?.message || errMsg;
@@ -530,19 +653,19 @@ async function classifyBatch(apiKey, texts){
 
   const data = await res.json();
   const textOut = data.choices?.[0]?.message?.content;
-  if(!textOut) throw new Error('رد غير متوقع من Groq');
+  if(!textOut) throw new Error('رد فارغ من Groq');
 
   let parsed;
   try { parsed = JSON.parse(textOut); }
-  catch(e){ throw new Error('تعذّر قراءة رد الذكاء الاصطناعي'); }
+  catch(e){ throw new Error('تعذّر قراءة الرد'); }
 
   const arr = parsed.results;
   if(!Array.isArray(arr) || arr.length !== texts.length){
-    throw new Error(`عدد النتائج (${arr?.length || 0}) لا يطابق عدد الحالات (${texts.length})`);
+    throw new Error(`عدد النتائج (${arr?.length||0}) ≠ عدد الحالات (${texts.length})`);
   }
 
-  const validLabels = ['بسيطة','متوسطة','حرجة'];
-  return arr.map(v => validLabels.includes(v) ? v : 'متوسطة');
+  const valid = ['بسيطة','متوسطة','حرجة'];
+  return arr.map(v => valid.includes(v) ? v : 'متوسطة');
 }
 
 async function runAIClassification(){
@@ -551,12 +674,18 @@ async function runAIClassification(){
   const progressWrap = document.getElementById('aiProgressWrap');
   const progressBar = document.getElementById('aiProgressBar');
   const apiKey = document.getElementById('groqKey').value.trim();
+  const model = document.getElementById('aiModel').value;
   const descIndex = parseInt(document.getElementById('descColumn').value, 10);
 
   msg.className = 'msg';
 
-  if(!fetchedData){ showMsg(msg, 'err', '⚠️ لازم تجيب البيانات الأول.'); return; }
-  if(!apiKey){ showMsg(msg, 'err', '⚠️ محتاج تحط مفتاح Groq API الأول.'); return; }
+  if(!fetchedData){ showMsg(msg, 'err', '⚠️ اجلب البيانات الأول.'); return; }
+  if(!apiKey){ showMsg(msg, 'err', '⚠️ حط مفتاح Groq.'); return; }
+
+  // حفظ المفتاح تلقائيًا
+  saveGroqKey(apiKey);
+  document.getElementById('clearKeyBtn').style.display = 'block';
+  document.getElementById('keyStatus').style.display = 'inline-block';
 
   btn.disabled = true;
   progressWrap.style.display = 'block';
@@ -568,14 +697,14 @@ async function runAIClassification(){
 
   try {
     for(let b=0; b<batches.length; b++){
-      showMsg(msg, 'loading', `⏳ جاري تصنيف الدفعة ${b+1} من ${batches.length}...`);
-      const batchResult = await classifyBatch(apiKey, batches[b]);
+      showMsg(msg, 'loading', `⏳ دفعة ${b+1} من ${batches.length}...`);
+      const batchResult = await classifyBatch(apiKey, model, batches[b]);
       results.push(...batchResult);
       progressBar.style.width = Math.round(((b+1)/batches.length)*100) + '%';
     }
 
     aiClassifications = results;
-    showMsg(msg, 'ok', `✅ تم تصنيف ${results.length} حالة بنجاح.`);
+    showMsg(msg, 'ok', `✅ تم تصنيف ${results.length} حالة.`);
 
     addAIStatColumn();
     addAIColumnCheckbox();
@@ -588,9 +717,100 @@ async function runAIClassification(){
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  5) تصدير Excel — صفحة "رصد الحالات" + صفحة لكل إحصاء
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════ تصدير Excel ═══════════════════════
+function getReportTitle(){
+  const d = new Date(fetchedData.start);
+  return `تقرير شهر ${MONTH_NAMES_AR[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function buildStyledSheet(wb, sheetName, title, headers, rows){
+  const ws = wb.addWorksheet(sheetName, {
+    views: [{ rightToLeft: true, state: 'frozen', ySplit: 2 }]
+  });
+
+  const colCount = headers.length;
+
+  ws.mergeCells(1, 1, 1, colCount);
+  const titleCell = ws.getCell(1, 1);
+  titleCell.value = title;
+  titleCell.font = { bold: true, size: 16, color: { argb: 'FF10334A' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(1).height = 55;
+
+  headers.forEach((h, i) => {
+    const cell = ws.getCell(2, i+1);
+    cell.value = h;
+    cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1B6B8C' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF10334A' } },
+      bottom: { style: 'thin', color: { argb: 'FF10334A' } },
+      left: { style: 'thin', color: { argb: 'FF10334A' } },
+      right: { style: 'thin', color: { argb: 'FF10334A' } }
+    };
+  });
+  ws.getRow(2).height = 40;
+
+  rows.forEach((row, ri) => {
+    row.forEach((val, ci) => {
+      const cell = ws.getCell(ri + 3, ci + 1);
+      cell.value = val;
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.font = { size: 11 };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFDDDDDD' } },
+        bottom: { style: 'thin', color: { argb: 'FFDDDDDD' } },
+        left: { style: 'thin', color: { argb: 'FFDDDDDD' } },
+        right: { style: 'thin', color: { argb: 'FFDDDDDD' } }
+      };
+      if(ri % 2 === 1){
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F8FA' } };
+      }
+    });
+  });
+
+  const footerRow = rows.length + 4;
+  ws.mergeCells(footerRow, 1, footerRow, colCount);
+  const fc = ws.getCell(footerRow, 1);
+  fc.value = COMPANY_FOOTER;
+  fc.font = { italic: true, size: 10, color: { argb: 'FF8899AA' } };
+  fc.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(footerRow).height = 22;
+
+  ws.columns = headers.map((h, i) => {
+    const maxLen = Math.max(
+      String(h).length,
+      ...rows.map(r => String(r[i] ?? '').length)
+    );
+    return { width: Math.min(Math.max(maxLen + 3, 12), 45) };
+  });
+
+  return { ws, footerRow };
+}
+
+function buildStatsSheet(wb, sheetName, colName, entries, total){
+  const title = `${getReportTitle()} — إحصاء حسب: ${colName}`;
+  const headers = ['القيمة', 'العدد', 'النسبة %'];
+  const rows = entries.map(([name, count]) => [
+    name,
+    count,
+    Number(((count/total)*100).toFixed(2))
+  ]);
+  rows.push(['الإجمالي', total, 100]);
+
+  const { ws } = buildStyledSheet(wb, sheetName, title, headers, rows);
+
+  const totalRowIdx = rows.length + 2;
+  [1,2,3].forEach(c => {
+    const cell = ws.getCell(totalRowIdx, c);
+    cell.font = { bold: true, size: 11, color: { argb: 'FF10334A' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F7EE' } };
+  });
+
+  return ws;
+}
+
 function sanitizeSheetName(name){
   let s = (name || 'ورقة').replace(/[:\\\/\?\*\[\]]/g, '_').trim();
   if(s.length > 31) s = s.slice(0, 31);
@@ -600,42 +820,21 @@ function sanitizeSheetName(name){
 
 function uniqueSheetName(wb, baseName){
   let name = sanitizeSheetName(baseName);
+  if(!wb.worksheets.find(ws => ws.name === name)) return name;
   let suffix = 1;
-  while(wb.SheetNames.includes(name)){
+  while(true){
     const s = `_${suffix}`;
-    name = sanitizeSheetName(baseName).slice(0, 31 - s.length) + s;
+    const candidate = sanitizeSheetName(baseName).slice(0, 31 - s.length) + s;
+    if(!wb.worksheets.find(ws => ws.name === candidate)) return candidate;
     suffix++;
   }
-  return name;
 }
 
-function buildBreakdownData(colKey){
-  const isAI = colKey === '__ai__';
-  const colIndex = isAI ? null : parseInt(colKey, 10);
-
-  const counts = {};
-  fetchedData.rows.forEach((r, idx) => {
-    let val = isAI ? (aiClassifications ? aiClassifications[idx] : null) : r[colIndex];
-    val = (val ?? '').toString().trim();
-    if(val === '') val = '(غير محدد)';
-    counts[val] = (counts[val] || 0) + 1;
-  });
-
-  const total = fetchedData.rows.length;
-  const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
-  const data = [
-    ['القيمة', 'العدد', 'النسبة %'],
-    ...entries.map(([name, count]) => [name, count, Number(((count/total)*100).toFixed(2))]),
-    ['الإجمالي', total, 100]
-  ];
-  return { data, colName: isAI ? 'تصنيف AI' : fetchedData.headers[colIndex] };
-}
-
-function doFinalExport(){
+async function doFinalExport(){
   const msg = document.getElementById('exportMsg');
   msg.className = 'msg';
 
-  if(!fetchedData){ showMsg(msg, 'err', '⚠️ لازم تجيب البيانات الأول.'); return; }
+  if(!fetchedData){ showMsg(msg, 'err', '⚠️ اجلب البيانات الأول.'); return; }
 
   const checkedBoxes = Array.from(document.querySelectorAll('#colList input[type="checkbox"]'));
   const selectedIndices = checkedBoxes.filter(cb => cb.checked).map(cb =>
@@ -647,40 +846,54 @@ function doFinalExport(){
     return;
   }
 
-  const headers = selectedIndices.map(i => i === '__ai__' ? '🤖 تصنيف الذكاء الاصطناعي' : fetchedData.headers[i]);
+  const headers = selectedIndices.map(i => i === '__ai__' ? '🤖 تصنيف AI' : fetchedData.headers[i]);
   const rows = fetchedData.rows.map((r, rowIdx) => selectedIndices.map(i =>
     i === '__ai__' ? (aiClassifications ? aiClassifications[rowIdx] : '') : r[i]
   ));
 
-  const wb = XLSX.utils.book_new();
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'WeCare Reports';
 
-  // ─── الصفحة الرئيسية: رصد الحالات ───
-  const sheetData = [headers, ...rows];
-  const ws = XLSX.utils.aoa_to_sheet(sheetData);
-  ws['!cols'] = headers.map((h,i) => {
-    const maxLen = Math.max(h.length, ...rows.map(r => String(r[i] ?? '').length));
-    return { wch: Math.min(Math.max(maxLen + 2, 10), 60) };
-  });
-  XLSX.utils.book_append_sheet(wb, ws, 'رصد الحالات');
+  let logoId = null;
+  if(logoBase64){
+    logoId = wb.addImage({ base64: logoBase64, extension: logoExtension });
+  }
 
-  // ─── صفحات الإحصائيات ───
+  const mainTitle = `${getReportTitle()} — ${fetchedData.site}`;
+  buildStyledSheet(wb, 'رصد الحالات', mainTitle, headers, rows);
+
   const checkedStatCols = Array.from(document.querySelectorAll('#statColsList input:checked'))
     .map(cb => cb.dataset.statCol);
 
   let statsCount = 0;
   checkedStatCols.forEach(colKey => {
-    const { data, colName } = buildBreakdownData(colKey);
-    const statWs = XLSX.utils.aoa_to_sheet(data);
-    statWs['!cols'] = [{ wch: 32 }, { wch: 10 }, { wch: 12 }];
-    const sheetName = uniqueSheetName(wb, colName);
-    XLSX.utils.book_append_sheet(wb, statWs, sheetName);
+    const { entries, total, isAI, colIndex } = computeBreakdown(colKey);
+    const colName = isAI ? 'تصنيف AI' : fetchedData.headers[colIndex];
+    buildStatsSheet(wb, uniqueSheetName(wb, colName), colName, entries, total);
     statsCount++;
   });
 
-  const fileName = `${fetchedData.site}_${fetchedData.start}_إلى_${fetchedData.end}.xlsx`;
-  XLSX.writeFile(wb, fileName);
+  if(logoId !== null){
+    wb.worksheets.forEach(ws => {
+      ws.addImage(logoId, {
+        tl: { col: 0.1, row: 0.1 },
+        ext: { width: 50, height: 50 }
+      });
+    });
+  }
 
-  showMsg(msg, 'ok', `✅ تم التحميل — ${rows.length} حالة · ${statsCount + 1} صفحة (رصد + ${statsCount} إحصاء)`);
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${fetchedData.site}_${fetchedData.start}_إلى_${fetchedData.end}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showMsg(msg, 'ok', `✅ تم التحميل — ${rows.length} حالة · ${statsCount + 1} صفحة`);
 }
 
 function showMsg(el, type, text){
