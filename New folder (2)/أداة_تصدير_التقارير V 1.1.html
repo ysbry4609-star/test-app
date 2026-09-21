@@ -121,10 +121,10 @@
       </div>
     </div>
 
-    <button id="fetchBtn" onclick="doFetch()">🔍 جلب البيانات وعرض الإحصائيات</button>
+    <button id="fetchBtn" onclick="doFetch()">🔍 جلب البيانات وتحميل Excel تلقائيًا</button>
 
     <div class="msg" id="msg"></div>
-    <div class="foot">البيانات بتتسحب مباشرة من جوجل شيتس بتاعك — الملف بيتحمّل على جهازك فقط.<br>الإصدار: v1.1</div>
+    <div class="foot">البيانات بتتسحب مباشرة من جوجل شيتس بتاعك — الملف بيتحمّل على جهازك فقط.<br>الإصدار: v1.2 — تصدير تلقائي</div>
   </div>
 
   <!-- 2) الإحصائيات -->
@@ -171,13 +171,14 @@
   <!-- 3) اختيار الأعمدة والتصدير -->
   <div class="card" id="columnsCard" style="display:none;">
     <h2>🗂️ اختيار الأعمدة المطلوبة في ملف Excel</h2>
+    <div class="sub" style="margin-bottom:12px;">الملف نزل تلقائيًا بالفعل بكل الأعمدة. لو عايز نسخة مخصصة، عدّل التحديد ثم اضغط تصدير.</div>
     <div class="col-actions">
       <button onclick="setAllColumns(true)">تحديد الكل</button>
       <button onclick="setAllColumns(false)">إلغاء التحديد</button>
     </div>
     <div class="col-list" id="colList"></div>
 
-    <button id="exportBtn" onclick="doFinalExport()">⬇️ تصدير Excel</button>
+    <button id="exportBtn" onclick="doFinalExport()">⬇️ تصدير Excel بالأعمدة المختارة</button>
     <div class="msg" id="exportMsg"></div>
   </div>
 
@@ -212,6 +213,8 @@ async function doFetch(){
   document.getElementById('statsCard').style.display = 'none';
   document.getElementById('aiCard').style.display = 'none';
   document.getElementById('columnsCard').style.display = 'none';
+  document.getElementById('exportMsg').className = 'msg';
+  document.getElementById('exportMsg').style.display = 'none';
   aiClassifications = null;
 
   if(!scriptUrl || !key || !start || !end){
@@ -244,7 +247,6 @@ async function doFetch(){
     }
 
     fetchedData = { headers: data.headers, rows: data.rows, site, start, end };
-    showMsg(msg, 'ok', `✅ تم جلب ${data.rows.length} حالة بنجاح.`);
 
     buildTriageSelect();
     buildDescSelect();
@@ -258,6 +260,10 @@ async function doFetch(){
     document.getElementById('statsCard').style.display = 'block';
     document.getElementById('aiCard').style.display = 'block';
     document.getElementById('columnsCard').style.display = 'block';
+
+    // ✨ تصدير تلقائي بمجرد نجاح السحب
+    showMsg(msg, 'ok', `✅ تم جلب ${data.rows.length} حالة بنجاح — جاري تحميل ملف Excel...`);
+    doFinalExport();
 
   } catch(err){
     showMsg(msg, 'err', '❌ حصل خطأ في الاتصال بالسكربت: ' + err.message);
