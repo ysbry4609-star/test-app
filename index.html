@@ -130,7 +130,7 @@
     <button id="fetchBtn" onclick="doFetch()">🔍 جلب البيانات وتحميل Excel</button>
 
     <div class="msg" id="msg"></div>
-    <div class="foot">البيانات بتتسحب مباشرة من جوجل شيتس — الملف بيتحمّل على جهازك فقط.<br>الإصدار: v3.1 — لوجو محفوظ تلقائيًا</div>
+    <div class="foot">البيانات بتتسحب مباشرة من جوجل شيتس — الملف بيتحمّل على جهازك فقط.<br>الإصدار: v3.2 — Cohere AI</div>
   </div>
 
   <div class="card" id="statsCard" style="display:none;">
@@ -153,28 +153,24 @@
     <h2>🤖 تصنيف الحالات بالذكاء الاصطناعي (اختياري)</h2>
     <div class="sub" style="margin-bottom:14px;">يقرأ وصف كل حالة ويصنّفها (بسيطة / متوسطة / حرجة) — بدون تسجيل في الشيت.</div>
 
-    <label>مزود الخدمة</label>
-    <select id="aiProvider">
-      <option value="groq">Groq (موصى به — سريع ومجاني)</option>
-    </select>
-
     <label>الموديل</label>
     <select id="aiModel">
-      <option value="llama-3.1-8b-instant">llama-3.1-8b-instant (أسرع)</option>
-      <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (أدق)</option>
-      <option value="gemma2-9b-it">gemma2-9b-it</option>
-      <option value="meta-llama/llama-4-scout-17b-16e-instruct">llama-4-scout-17b (جديد)</option>
+      <option value="command-r-plus-08-2024">command-r-plus-08-2024 (الأدق)</option>
+      <option value="command-r-08-2024" selected>command-r-08-2024 (متوازن)</option>
+      <option value="command-a-03-2025">command-a-03-2025 (الأحدث)</option>
+      <option value="aya-expanse-32b">aya-expanse-32b (الأقوى في العربي)</option>
+      <option value="aya-expanse-8b">aya-expanse-8b (الأسرع)</option>
     </select>
 
-    <label>مفتاح Groq API <span id="keyStatus" class="logo-saved-badge" style="display:none;">✅ محفوظ</span></label>
-    <input type="password" id="groqKey" placeholder="gsk_...">
+    <label>مفتاح Cohere API <span id="keyStatus" class="logo-saved-badge" style="display:none;">✅ محفوظ</span></label>
+    <input type="password" id="cohereKey" placeholder="مفتاح Cohere هنا">
     <div class="ai-note">
       مفتاح مجاني من
-      <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>
-      — سجّل بحساب Google، دوس "Create API Key"، وانسخه.
-      <br>🔒 المفتاح بيتحفظ في متصفحك بس — مش بيتبعت لأي حد غير Groq.
+      <a href="https://dashboard.cohere.com/api-keys" target="_blank" rel="noopener">dashboard.cohere.com/api-keys</a>
+      — سجّل بحساب Google أو Email، دوس "New Trial Key"، وانسخه.
+      <br>🔒 المفتاح بيتحفظ في متصفحك بس — مش بيتبعت لأي حد غير Cohere.
     </div>
-    <button type="button" id="clearKeyBtn" class="secondary" style="display:none; margin-top:8px;" onclick="clearGroqKey()">🗑️ مسح المفتاح المحفوظ</button>
+    <button type="button" id="clearKeyBtn" class="secondary" style="display:none; margin-top:8px;" onclick="clearCohereKey()">🗑️ مسح المفتاح المحفوظ</button>
 
     <label>عمود وصف الحالة / الشكوى</label>
     <select id="descColumn"></select>
@@ -209,12 +205,12 @@ let logoExtension = 'png';
 const CHART_COLORS = ['#2f9bc4','#e67e22','#c0392b','#27ae60','#8e44ad','#f1c40f','#16a085','#7f8c8d','#2980b9','#d35400'];
 const TRIAGE_KEYWORDS = ['تصنيف','تراياج','triage','الخطورة','درجة الحالة','مستوى الحالة'];
 const DESC_KEYWORDS = ['وصف','الشكوى','الأعراض','الحالة','ملخص','تفاصيل','التشخيص','الشكوي'];
-const AI_BATCH_SIZE = 20;
+const AI_BATCH_SIZE = 15;
 const COMPANY_FOOTER = 'Emergency and Critical Care Department — WeCare Company';
 const MONTH_NAMES_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
 const LOGO_STORAGE_KEY = 'wecare_logo_v1';
-const GROQ_KEY_STORAGE = 'wecare_groq_key_v1';
+const COHERE_KEY_STORAGE = 'wecare_cohere_key_v1';
 
 // ═══════════════════════ اللوجو — حفظ تلقائي في المتصفح ═══════════════════════
 function loadSavedLogo(){
@@ -289,18 +285,17 @@ document.getElementById('logoInput').addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-// تحميل اللوجو المحفوظ عند فتح الصفحة
 loadSavedLogo();
 
-// ═══════════════════════ مفتاح Groq — حفظ تلقائي ═══════════════════════
-function loadSavedGroqKey(){
+// ═══════════════════════ مفتاح Cohere — حفظ تلقائي ═══════════════════════
+function loadSavedCohereKey(){
   try {
-    const saved = localStorage.getItem(GROQ_KEY_STORAGE);
+    const saved = localStorage.getItem(COHERE_KEY_STORAGE);
     if(!saved) return false;
     const obj = JSON.parse(saved);
     if(!obj.key) return false;
 
-    document.getElementById('groqKey').value = obj.key;
+    document.getElementById('cohereKey').value = obj.key;
     document.getElementById('clearKeyBtn').style.display = 'block';
     document.getElementById('keyStatus').style.display = 'inline-block';
     return true;
@@ -309,30 +304,30 @@ function loadSavedGroqKey(){
   }
 }
 
-function saveGroqKey(key){
+function saveCohereKey(key){
   try {
-    localStorage.setItem(GROQ_KEY_STORAGE, JSON.stringify({ key }));
+    localStorage.setItem(COHERE_KEY_STORAGE, JSON.stringify({ key }));
     return true;
   } catch(e) {
     return false;
   }
 }
 
-function clearGroqKey(){
+function clearCohereKey(){
   if(!confirm('متأكد إنك عايز تمسح المفتاح المحفوظ؟')) return;
-  localStorage.removeItem(GROQ_KEY_STORAGE);
-  document.getElementById('groqKey').value = '';
+  localStorage.removeItem(COHERE_KEY_STORAGE);
+  document.getElementById('cohereKey').value = '';
   document.getElementById('clearKeyBtn').style.display = 'none';
   document.getElementById('keyStatus').style.display = 'none';
 }
 
-document.getElementById('groqKey').addEventListener('input', (e) => {
+document.getElementById('cohereKey').addEventListener('input', (e) => {
   const key = e.target.value.trim();
   const clearBtn = document.getElementById('clearKeyBtn');
   const status = document.getElementById('keyStatus');
 
-  if(key.length > 10 && key.startsWith('gsk_')){
-    const ok = saveGroqKey(key);
+  if(key.length > 20){
+    const ok = saveCohereKey(key);
     if(ok){
       clearBtn.style.display = 'block';
       status.style.display = 'inline-block';
@@ -343,8 +338,7 @@ document.getElementById('groqKey').addEventListener('input', (e) => {
   }
 });
 
-// تحميل المفتاح المحفوظ عند فتح الصفحة
-loadSavedGroqKey();
+loadSavedCohereKey();
 
 // ═══════════════════════ جلب البيانات ═══════════════════════
 async function doFetch(){
@@ -606,7 +600,7 @@ function renderStatBlock(container, colKey){
   } catch(e) { console.warn('رسم فشل:', e.message); }
 }
 
-// ═══════════════════════ Groq AI ═══════════════════════
+// ═══════════════════════ Cohere AI ═══════════════════════
 function chunkArray(arr, size){
   const out = [];
   for(let i=0; i<arr.length; i+=size) out.push(arr.slice(i, i+size));
@@ -624,11 +618,12 @@ async function classifyBatch(apiKey, model, texts){
   const userPrompt = `الحالات (${texts.length}):\n` +
     texts.map((t,i) => `${i+1}. ${(t||'').toString().slice(0, 300)}`).join('\n');
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+  const res = await fetch('https://api.cohere.com/v2/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'Authorization': `Bearer ${apiKey}`,
+      'X-Client-Name': 'WeCare-Reports'
     },
     body: JSON.stringify({
       model: model,
@@ -636,28 +631,38 @@ async function classifyBatch(apiKey, model, texts){
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      response_format: { type: 'json_object' },
-      temperature: 0.1
+      temperature: 0.1,
+      response_format: { type: 'json_object' }
     })
   });
 
   if(!res.ok){
     const errBody = await res.text();
-    let errMsg = `Groq (${res.status})`;
+    let errMsg = `Cohere (${res.status})`;
     try {
       const parsed = JSON.parse(errBody);
-      errMsg = parsed.error?.message || errMsg;
+      errMsg = parsed.message || errMsg;
     } catch(e){}
     throw new Error(errMsg);
   }
 
   const data = await res.json();
-  const textOut = data.choices?.[0]?.message?.content;
-  if(!textOut) throw new Error('رد فارغ من Groq');
+
+  // Cohere v2 response: data.message.content[0].text
+  let textOut = '';
+  if(data.message?.content && Array.isArray(data.message.content)){
+    textOut = data.message.content.find(c => c.type === 'text')?.text || '';
+  }
+  if(!textOut && data.text) textOut = data.text;
+  if(!textOut) throw new Error('رد فارغ من Cohere');
 
   let parsed;
-  try { parsed = JSON.parse(textOut); }
-  catch(e){ throw new Error('تعذّر قراءة الرد'); }
+  try {
+    const jsonMatch = textOut.match(/\{[\s\S]*\}/);
+    parsed = JSON.parse(jsonMatch ? jsonMatch[0] : textOut);
+  } catch(e){
+    throw new Error('تعذّر قراءة الرد من Cohere');
+  }
 
   const arr = parsed.results;
   if(!Array.isArray(arr) || arr.length !== texts.length){
@@ -673,17 +678,16 @@ async function runAIClassification(){
   const msg = document.getElementById('aiMsg');
   const progressWrap = document.getElementById('aiProgressWrap');
   const progressBar = document.getElementById('aiProgressBar');
-  const apiKey = document.getElementById('groqKey').value.trim();
+  const apiKey = document.getElementById('cohereKey').value.trim();
   const model = document.getElementById('aiModel').value;
   const descIndex = parseInt(document.getElementById('descColumn').value, 10);
 
   msg.className = 'msg';
 
   if(!fetchedData){ showMsg(msg, 'err', '⚠️ اجلب البيانات الأول.'); return; }
-  if(!apiKey){ showMsg(msg, 'err', '⚠️ حط مفتاح Groq.'); return; }
+  if(!apiKey){ showMsg(msg, 'err', '⚠️ حط مفتاح Cohere.'); return; }
 
-  // حفظ المفتاح تلقائيًا
-  saveGroqKey(apiKey);
+  saveCohereKey(apiKey);
   document.getElementById('clearKeyBtn').style.display = 'block';
   document.getElementById('keyStatus').style.display = 'inline-block';
 
