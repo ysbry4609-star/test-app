@@ -11,19 +11,12 @@
   body {
     font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
     background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-    min-height: 100vh;
-    margin: 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 24px;
+    min-height: 100vh; margin: 0;
+    display: flex; align-items: flex-start; justify-content: center; padding: 24px;
   }
-  .wrap { max-width: 520px; width:100%; display:flex; flex-direction:column; gap:16px; }
+  .wrap { max-width: 560px; width:100%; display:flex; flex-direction:column; gap:16px; }
   .card {
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 28px;
-    width: 100%;
+    background: #ffffff; border-radius: 16px; padding: 28px; width: 100%;
     box-shadow: 0 20px 50px rgba(0,0,0,.35);
   }
   h1 { font-size: 20px; margin: 0 0 4px; color: #10334a; }
@@ -53,31 +46,48 @@
 
   .stat-total {
     display:flex; align-items:baseline; gap:8px; background:#eef6fb; border-radius:12px;
-    padding:14px 16px; margin-bottom:16px;
+    padding:14px 16px; margin:16px 0;
   }
   .stat-total .num { font-size:26px; font-weight:800; color:#1b6b8c; }
   .stat-total .lbl { font-size:13px; color:#556; }
+
+  .stat-block {
+    background:#fafcfd; border:1.5px solid #e8eef2; border-radius:12px;
+    padding:18px; margin-top:16px;
+  }
+  .stat-block h3 {
+    font-size:14px; color:#1b6b8c; margin:0 0 12px;
+    padding-bottom:8px; border-bottom:2px solid #e0eaf0;
+  }
+
   .breakdown-row {
-    display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f0f2f4; font-size:13.5px;
+    display:flex; align-items:center; gap:10px; padding:8px 0;
+    border-bottom:1px solid #f0f2f4; font-size:13.5px;
   }
   .breakdown-row:last-child { border-bottom:none; }
   .dot { width:11px; height:11px; border-radius:50%; flex-shrink:0; }
   .breakdown-row .name { flex:1; color:#334; }
   .breakdown-row .count { font-weight:700; color:#10334a; }
   .breakdown-row .pct { color:#98a2ae; font-size:12px; width:44px; text-align:left; }
-  .charts-grid { display:flex; flex-direction:column; gap:20px; margin-top:18px; }
-  .chart-box { position:relative; height:220px; }
+
+  .charts-grid { display:flex; flex-direction:column; gap:16px; margin-top:14px; }
+  .chart-box { position:relative; height:200px; }
 
   .col-actions { display:flex; gap:8px; margin-bottom:10px; }
   .col-actions button {
     margin-top:0; padding:8px; font-size:12.5px; background:#eef3f6; color:#1b6b8c; font-weight:600;
   }
-  .col-list { display:flex; flex-direction:column; gap:2px; max-height: 260px; overflow-y:auto; padding:4px 2px; }
+  .col-list { display:flex; flex-direction:column; gap:2px; max-height: 280px; overflow-y:auto; padding:4px 2px; }
   .col-item {
     display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px; font-size:13.5px; color:#334;
+    cursor:pointer;
   }
   .col-item:hover { background:#f8fafb; }
-  .col-item input { width:auto; }
+  .col-item input { width:auto; margin:0; }
+  .unique-badge {
+    margin-inline-start:auto; background:#eef3f6; color:#667;
+    font-size:11px; padding:3px 8px; border-radius:10px; white-space:nowrap;
+  }
 
   .ai-note { font-size:12px; color:#98a2ae; line-height:1.7; margin-top:4px; }
   .ai-note a { color:#2f9bc4; }
@@ -88,9 +98,10 @@
 <body>
 <div class="wrap">
 
+  <!-- 1) الاتصال والجلب -->
   <div class="card">
     <h1>📊 أداة تصدير تقارير WeCare</h1>
-    <div class="sub">أداة شخصية — بتسحب الحالات من جوجل شيتس، تعرض إحصائيات، وتخليك تختار الأعمدة قبل ما تصدّر ملف Excel.</div>
+    <div class="sub">أداة شخصية — بتسحب الحالات من جوجل شيتس، تعرض إحصائيات لأكتر من عمود، وتصدّر ملف Excel فيه صفحة لكل إحصاء.</div>
 
     <label>رابط السكربت (SCRIPT_URL)</label>
     <input type="text" id="scriptUrl" value="https://script.google.com/macros/s/AKfycbxTHJowoY7X2LYhsbe52UppJu1k_AAvER3aW9Mt9GKSR2WZn6pXuilfPZBJWsdlvFvK/exec">
@@ -118,38 +129,40 @@
     <button id="fetchBtn" onclick="doFetch()">🔍 جلب البيانات وتحميل Excel تلقائيًا</button>
 
     <div class="msg" id="msg"></div>
-    <div class="foot">البيانات بتتسحب مباشرة من جوجل شيتس بتاعك — الملف بيتحمّل على جهازك فقط.<br>الإصدار: v1.3 — تصدير تلقائي</div>
+    <div class="foot">البيانات بتتسحب مباشرة من جوجل شيتس بتاعك — الملف بيتحمّل على جهازك فقط.<br>الإصدار: v2.0 — إحصائيات متعددة + Groq AI</div>
   </div>
 
+  <!-- 2) الإحصائيات -->
   <div class="card" id="statsCard" style="display:none;">
     <h2>📈 إحصائيات الحالات</h2>
 
-    <label>عمود التصنيف (يُستخدم للإحصاء والرسم البياني)</label>
-    <select id="triageColumn" onchange="updateStats()"></select>
+    <label>الأعمدة المطلوب إحصاؤها (اختر واحدة أو أكثر)</label>
+    <div class="col-actions">
+      <button onclick="setAllStatCols(true)">تحديد الكل</button>
+      <button onclick="setAllStatCols(false)">إلغاء التحديد</button>
+    </div>
+    <div class="col-list" id="statColsList"></div>
 
     <div class="stat-total">
       <div class="num" id="totalCount">0</div>
       <div class="lbl">إجمالي عدد الحالات في الفترة المحددة</div>
     </div>
 
-    <div id="breakdownList"></div>
-
-    <div class="charts-grid">
-      <div class="chart-box"><canvas id="pieChart"></canvas></div>
-      <div class="chart-box"><canvas id="barChart"></canvas></div>
-    </div>
+    <div id="statsOutput"></div>
   </div>
 
+  <!-- 3) الذكاء الاصطناعي -->
   <div class="card" id="aiCard" style="display:none;">
     <h2>🤖 تصنيف الحالات بالذكاء الاصطناعي (اختياري)</h2>
     <div class="sub" style="margin-bottom:14px;">لو الحالات مش متصنفة أصلاً، الأداة تقدر تقرأ وصف كل حالة وتحدّد تصنيفها (بسيطة / متوسطة / حرجة) تلقائيًا وقت التصدير بس — من غير ما تتسجل في الشيت.</div>
 
-    <label>مفتاح Gemini API</label>
-    <input type="password" id="geminiKey" placeholder="الصق المفتاح هنا">
+    <label>مفتاح Groq API</label>
+    <input type="password" id="groqKey" placeholder="gsk_...">
     <div class="ai-note">
-      مفتاح مجاني من Google — روح على
-      <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
-      وسجّل دخول بحساب Google، دوس "Create API key"، وانسخه هنا.
+      مفتاح مجاني وسخي — روح على
+      <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>
+      وسجّل بحساب Google، دوس "Create API Key"، وانسخه هنا.
+      <br>✅ رصيد مجاني يومي: 14,400 طلب — أسرع بكتير من Gemini.
     </div>
 
     <label>عمود وصف الحالة / الشكوى (اللي هيتقرأ عشان التصنيف)</label>
@@ -160,9 +173,10 @@
     <div class="msg" id="aiMsg"></div>
   </div>
 
+  <!-- 4) اختيار الأعمدة والتصدير -->
   <div class="card" id="columnsCard" style="display:none;">
-    <h2>🗂️ اختيار الأعمدة المطلوبة في ملف Excel</h2>
-    <div class="sub" style="margin-bottom:12px;">الملف نزل تلقائيًا بالفعل بكل الأعمدة. لو عايز نسخة مخصصة، عدّل التحديد ثم اضغط تصدير.</div>
+    <h2>🗂️ اختيار الأعمدة المطلوبة في صفحة "رصد الحالات"</h2>
+    <div class="sub" style="margin-bottom:12px;">الملف نزل تلقائيًا بالفعل. لو عايز نسخة مخصصة بأعمدة مختلفة، عدّل التحديد ثم اضغط تصدير.</div>
     <div class="col-actions">
       <button onclick="setAllColumns(true)">تحديد الكل</button>
       <button onclick="setAllColumns(false)">إلغاء التحديد</button>
@@ -177,16 +191,18 @@
 
 <script>
 let fetchedData = null;
-let pieChartInst = null;
-let barChartInst = null;
 let aiClassifications = null;
+let chartInstances = {};
 
 const CHART_COLORS = ['#2f9bc4','#e67e22','#c0392b','#27ae60','#8e44ad','#f1c40f','#16a085','#7f8c8d','#2980b9','#d35400'];
 const TRIAGE_KEYWORDS = ['تصنيف','تراياج','triage','الخطورة','درجة الحالة','مستوى الحالة'];
 const DESC_KEYWORDS = ['وصف','الشكوى','الأعراض','الحالة','ملخص','تفاصيل','التشخيص','الشكوي'];
-const GEMINI_MODEL = 'gemini-flash-latest';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const AI_BATCH_SIZE = 25;
 
+// ═══════════════════════════════════════════════════════════
+//  1) جلب البيانات
+// ═══════════════════════════════════════════════════════════
 async function doFetch(){
   const btn = document.getElementById('fetchBtn');
   const msg = document.getElementById('msg');
@@ -196,17 +212,16 @@ async function doFetch(){
   const start = document.getElementById('startDate').value;
   const end = document.getElementById('endDate').value;
 
-  // ✅ الإصلاح: شيلنا msg.style.display = 'none' — الكلاس .msg أصلاً فيه display:none
   msg.className = 'msg';
-
   document.getElementById('statsCard').style.display = 'none';
   document.getElementById('aiCard').style.display = 'none';
   document.getElementById('columnsCard').style.display = 'none';
   document.getElementById('exportMsg').className = 'msg';
   aiClassifications = null;
+  chartInstances = {};
 
   if(!scriptUrl || !key || !start || !end){
-    showMsg(msg, 'err', '⚠️ لازم تملأ كل الحقول (رابط السكربت، المفتاح، من تاريخ، إلى تاريخ).');
+    showMsg(msg, 'err', '⚠️ لازم تملأ كل الحقول.');
     return;
   }
   if(start > end){
@@ -224,22 +239,19 @@ async function doFetch(){
 
     if(data.result !== 'success'){
       showMsg(msg, 'err', '❌ ' + (data.message || 'حصل خطأ غير معروف'));
-      btn.disabled = false;
       return;
     }
-
     if(!data.rows || data.rows.length === 0){
       showMsg(msg, 'err', '⚠️ مفيش حالات مسجلة في الفترة دي لموقع "' + site + '".');
-      btn.disabled = false;
       return;
     }
 
     fetchedData = { headers: data.headers, rows: data.rows, site, start, end };
 
-    buildTriageSelect();
+    buildStatColumnsList();
     buildDescSelect();
     buildColumnList();
-    updateStats();  // دلوقتي آمنة حتى لو Chart.js فشل
+    updateStats();
 
     document.getElementById('aiMsg').className = 'msg';
     document.getElementById('aiProgressWrap').style.display = 'none';
@@ -251,12 +263,8 @@ async function doFetch(){
 
     showMsg(msg, 'ok', `✅ تم جلب ${data.rows.length} حالة بنجاح — جاري تحميل ملف Excel...`);
 
-    // ✨ تصدير تلقائي — داخل try/catch منفصل عشان لو فشل ما يأثرش على الرسالة
-    try {
-      doFinalExport();
-    } catch(exportErr){
-      showMsg(msg, 'err', '⚠️ تم جلب البيانات بس فشل التصدير: ' + exportErr.message);
-    }
+    try { doFinalExport(); }
+    catch(exportErr){ showMsg(msg, 'err', '⚠️ تم جلب البيانات بس فشل التصدير: ' + exportErr.message); }
 
   } catch(err){
     showMsg(msg, 'err', '❌ حصل خطأ في الاتصال بالسكربت: ' + err.message);
@@ -265,20 +273,55 @@ async function doFetch(){
   }
 }
 
-function buildTriageSelect(){
-  const sel = document.getElementById('triageColumn');
-  sel.innerHTML = '';
-  fetchedData.headers.forEach((h, i) => {
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = h;
-    sel.appendChild(opt);
-  });
+// ═══════════════════════════════════════════════════════════
+//  2) قائمة أعمدة الإحصائيات (متعددة)
+// ═══════════════════════════════════════════════════════════
+function buildStatColumnsList(){
+  const list = document.getElementById('statColsList');
+  list.innerHTML = '';
+
+  // تخمين عمود التصنيف تلقائياً
   let guessIndex = fetchedData.headers.findIndex(h =>
     TRIAGE_KEYWORDS.some(k => h.toLowerCase().includes(k.toLowerCase()))
   );
   if(guessIndex === -1) guessIndex = 0;
-  sel.value = guessIndex;
+
+  fetchedData.headers.forEach((h, i) => {
+    const uniqueCount = new Set(fetchedData.rows.map(r => (r[i] ?? '').toString().trim() || '(غير محدد)')).size;
+    const row = document.createElement('label');
+    row.className = 'col-item';
+    row.innerHTML = `
+      <input type="checkbox" data-stat-col="${i}" ${i === guessIndex ? 'checked' : ''}>
+      <span>${h}</span>
+      <span class="unique-badge">${uniqueCount} قيمة</span>
+    `;
+    row.querySelector('input').addEventListener('change', updateStats);
+    list.appendChild(row);
+  });
+}
+
+function addAIStatColumn(){
+  const list = document.getElementById('statColsList');
+  const existing = list.querySelector('[data-stat-col="__ai__"]');
+  if(!aiClassifications){
+    if(existing) existing.parentElement.remove();
+    return;
+  }
+  if(existing) return;
+  const row = document.createElement('label');
+  row.className = 'col-item';
+  row.innerHTML = `
+    <input type="checkbox" data-stat-col="__ai__" checked>
+    <span>🤖 تصنيف الذكاء الاصطناعي</span>
+    <span class="unique-badge">3 قيم</span>
+  `;
+  row.querySelector('input').addEventListener('change', updateStats);
+  list.appendChild(row);
+}
+
+function setAllStatCols(state){
+  document.querySelectorAll('#statColsList input').forEach(cb => cb.checked = state);
+  updateStats();
 }
 
 function buildDescSelect(){
@@ -286,8 +329,7 @@ function buildDescSelect(){
   sel.innerHTML = '';
   fetchedData.headers.forEach((h, i) => {
     const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = h;
+    opt.value = i; opt.textContent = h;
     sel.appendChild(opt);
   });
   let guessIndex = fetchedData.headers.findIndex(h =>
@@ -327,27 +369,66 @@ function setAllColumns(state){
   document.querySelectorAll('#colList input[type="checkbox"]').forEach(cb => cb.checked = state);
 }
 
+// ═══════════════════════════════════════════════════════════
+//  3) عرض الإحصائيات (متعدد الأعمدة)
+// ═══════════════════════════════════════════════════════════
 function updateStats(){
   if(!fetchedData) return;
-  const rawValue = document.getElementById('triageColumn').value;
-  const useAI = rawValue === '__ai__';
-  const colIndex = useAI ? null : parseInt(rawValue, 10);
+
+  const total = fetchedData.rows.length;
+  document.getElementById('totalCount').textContent = total;
+
+  const output = document.getElementById('statsOutput');
+
+  // تنظيف الرسوم القديمة
+  Object.values(chartInstances).forEach(inst => {
+    if(inst.pie) try { inst.pie.destroy(); } catch(e){}
+    if(inst.bar) try { inst.bar.destroy(); } catch(e){}
+  });
+  chartInstances = {};
+  output.innerHTML = '';
+
+  const checkedCols = Array.from(document.querySelectorAll('#statColsList input:checked'))
+    .map(cb => cb.dataset.statCol);
+
+  if(checkedCols.length === 0){
+    output.innerHTML = '<div class="sub" style="text-align:center;padding:20px;">اختر عمود واحد على الأقل لعرض الإحصائيات.</div>';
+    return;
+  }
+
+  checkedCols.forEach(colKey => renderStatBlock(output, colKey));
+}
+
+function renderStatBlock(container, colKey){
+  const isAI = colKey === '__ai__';
+  const colIndex = isAI ? null : parseInt(colKey, 10);
+  const colName = isAI ? '🤖 تصنيف الذكاء الاصطناعي' : fetchedData.headers[colIndex];
 
   const counts = {};
   fetchedData.rows.forEach((r, idx) => {
-    let val = useAI ? (aiClassifications ? aiClassifications[idx] : null) : r[colIndex];
+    let val = isAI ? (aiClassifications ? aiClassifications[idx] : null) : r[colIndex];
     val = (val ?? '').toString().trim();
     if(val === '') val = '(غير محدد)';
     counts[val] = (counts[val] || 0) + 1;
   });
 
   const total = fetchedData.rows.length;
-  document.getElementById('totalCount').textContent = total;
-
   const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
 
-  const listEl = document.getElementById('breakdownList');
-  listEl.innerHTML = '';
+  const uid = 'stat_' + Math.random().toString(36).slice(2, 9);
+  const block = document.createElement('div');
+  block.className = 'stat-block';
+  block.innerHTML = `
+    <h3>📊 ${colName}</h3>
+    <div class="breakdown-list"></div>
+    <div class="charts-grid">
+      <div class="chart-box"><canvas id="${uid}_pie"></canvas></div>
+      <div class="chart-box"><canvas id="${uid}_bar"></canvas></div>
+    </div>
+  `;
+  container.appendChild(block);
+
+  const listEl = block.querySelector('.breakdown-list');
   entries.forEach(([name, count], i) => {
     const pct = ((count/total)*100).toFixed(1);
     const row = document.createElement('div');
@@ -361,64 +442,47 @@ function updateStats(){
     listEl.appendChild(row);
   });
 
-  const labels = entries.map(e => e[0]);
-  const values = entries.map(e => e[1]);
-  const colors = entries.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+  if(typeof Chart === 'undefined') return;
 
-  // ✅ الإصلاح: لفينا drawCharts في try/catch عشان فشل Chart.js ما يوقفش التصدير
   try {
-    drawCharts(labels, values, colors);
-  } catch(chartErr){
-    console.warn('تعذّر رسم المخططات (Chart.js مش محمّل؟):', chartErr.message);
-  }
-}
+    const labels = entries.map(e => e[0]);
+    const values = entries.map(e => e[1]);
+    const colors = entries.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
 
-function drawCharts(labels, values, colors){
-  // ✅ الإصلاح: نتأكد إن Chart.js محمّل قبل ما نستخدمه
-  if(typeof Chart === 'undefined'){
-    console.warn('Chart.js مش محمّل — تخطّي الرسوم البيانية');
-    return;
-  }
-
-  const pieCtx = document.getElementById('pieChart').getContext('2d');
-  const barCtx = document.getElementById('barChart').getContext('2d');
-
-  if(pieChartInst) pieChartInst.destroy();
-  if(barChartInst) barChartInst.destroy();
-
-  pieChartInst = new Chart(pieCtx, {
-    type: 'pie',
-    data: {
-      labels,
-      datasets: [{ data: values, backgroundColor: colors, borderColor:'#fff', borderWidth:2 }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { family: "'Segoe UI', Tahoma, Arial, sans-serif" } } },
-        title: { display: true, text: 'توزيع الحالات حسب التصنيف', font: { size: 13 } }
+    const pie = new Chart(block.querySelector(`#${uid}_pie`).getContext('2d'), {
+      type: 'pie',
+      data: { labels, datasets: [{ data: values, backgroundColor: colors, borderColor:'#fff', borderWidth:2 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: "'Segoe UI', Tahoma, Arial, sans-serif" } } },
+          title: { display: true, text: 'التوزيع', font: { size: 12 } }
+        }
       }
-    }
-  });
+    });
 
-  barChartInst = new Chart(barCtx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{ label: 'عدد الحالات', data: values, backgroundColor: colors }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      indexAxis: 'y',
-      plugins: {
-        legend: { display: false },
-        title: { display: true, text: 'عدد الحالات لكل تصنيف', font: { size: 13 } }
-      },
-      scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
-    }
-  });
+    const bar = new Chart(block.querySelector(`#${uid}_bar`).getContext('2d'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'عدد الحالات', data: values, backgroundColor: colors }] },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: 'العدد', font: { size: 12 } }
+        },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+
+    chartInstances[colKey] = { pie, bar };
+  } catch(e) {
+    console.warn('تعذّر رسم المخطط:', e.message);
+  }
 }
 
+// ═══════════════════════════════════════════════════════════
+//  4) التصنيف بالذكاء الاصطناعي — Groq
+// ═══════════════════════════════════════════════════════════
 function chunkArray(arr, size){
   const out = [];
   for(let i=0; i<arr.length; i+=size) out.push(arr.slice(i, i+size));
@@ -426,44 +490,59 @@ function chunkArray(arr, size){
 }
 
 async function classifyBatch(apiKey, texts){
-  const prompt =
-`أنت مساعد فرز طبي (Triage) لخدمة إسعاف. صنّف كل حالة من الحالات التالية إلى واحدة من ثلاث فئات فقط بالضبط بنفس الكتابة:
-"بسيطة" — حالة خفيفة لا تستدعي إسعاف.
-"متوسطة" — تحتاج عناية عاجلة لكنها مستقرة.
-"حرجة" — تهدد الحياة وتحتاج تدخل فوري.
+  const systemPrompt = `أنت مساعد فرز طبي (Triage) لخدمة إسعاف. مهمتك تصنيف كل حالة إلى واحدة من ثلاث فئات فقط: "بسيطة" أو "متوسطة" أو "حرجة".
+- "بسيطة" — حالة خفيفة لا تستدعي إسعاف.
+- "متوسطة" — تحتاج عناية عاجلة لكنها مستقرة.
+- "حرجة" — تهدد الحياة وتحتاج تدخل فوري.
+لو النص فارغ أو غير مفهوم استخدم "متوسطة".
+يجب أن ترد بصيغة JSON فقط بالشكل: {"results": ["بسيطة", "حرجة", ...]} بنفس عدد وترتيب الحالات المُرسلة.`;
 
-أعد النتيجة كمصفوفة JSON فقط (بدون أي نص إضافي)، بنفس عدد وترتيب الحالات، كل عنصر واحد من الفئات الثلاث بالضبط. لو النص فارغ أو غير مفهوم استخدم "متوسطة".
+  const userPrompt = `الحالات (${texts.length} حالة):\n` +
+    texts.map((t,i) => `${i+1}. ${(t||'').toString().slice(0,300)}`).join('\n');
 
-الحالات:
-${texts.map((t,i) => `${i+1}. ${(t||'').toString().slice(0,300)}`).join('\n')}`;
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { responseMimeType: 'application/json' }
+      model: GROQ_MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.1
     })
   });
 
-  const data = await res.json();
-  if(data.error){
-    throw new Error(data.error.message || 'خطأ من Gemini API');
+  if(!res.ok){
+    const errBody = await res.text();
+    let errMsg = `Groq API error (${res.status})`;
+    try {
+      const parsed = JSON.parse(errBody);
+      errMsg = parsed.error?.message || errMsg;
+    } catch(e){}
+    throw new Error(errMsg);
   }
 
-  const textOut = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if(!textOut) throw new Error('رد غير متوقع من الخدمة');
+  const data = await res.json();
+  const textOut = data.choices?.[0]?.message?.content;
+  if(!textOut) throw new Error('رد غير متوقع من Groq');
 
   let parsed;
   try { parsed = JSON.parse(textOut); }
   catch(e){ throw new Error('تعذّر قراءة رد الذكاء الاصطناعي'); }
 
-  if(!Array.isArray(parsed) || parsed.length !== texts.length){
-    throw new Error('عدد النتائج المرجعة لا يطابق عدد الحالات');
+  const arr = parsed.results;
+  if(!Array.isArray(arr) || arr.length !== texts.length){
+    throw new Error(`عدد النتائج (${arr?.length || 0}) لا يطابق عدد الحالات (${texts.length})`);
   }
+
   const validLabels = ['بسيطة','متوسطة','حرجة'];
-  return parsed.map(v => validLabels.includes(v) ? v : 'متوسطة');
+  return arr.map(v => validLabels.includes(v) ? v : 'متوسطة');
 }
 
 async function runAIClassification(){
@@ -471,19 +550,13 @@ async function runAIClassification(){
   const msg = document.getElementById('aiMsg');
   const progressWrap = document.getElementById('aiProgressWrap');
   const progressBar = document.getElementById('aiProgressBar');
-  const apiKey = document.getElementById('geminiKey').value.trim();
+  const apiKey = document.getElementById('groqKey').value.trim();
   const descIndex = parseInt(document.getElementById('descColumn').value, 10);
 
   msg.className = 'msg';
 
-  if(!fetchedData){
-    showMsg(msg, 'err', '⚠️ لازم تجيب البيانات الأول.');
-    return;
-  }
-  if(!apiKey){
-    showMsg(msg, 'err', '⚠️ محتاج تحط مفتاح Gemini API الأول.');
-    return;
-  }
+  if(!fetchedData){ showMsg(msg, 'err', '⚠️ لازم تجيب البيانات الأول.'); return; }
+  if(!apiKey){ showMsg(msg, 'err', '⚠️ محتاج تحط مفتاح Groq API الأول.'); return; }
 
   btn.disabled = true;
   progressWrap.style.display = 'block';
@@ -504,18 +577,9 @@ async function runAIClassification(){
     aiClassifications = results;
     showMsg(msg, 'ok', `✅ تم تصنيف ${results.length} حالة بنجاح.`);
 
-    const triageSel = document.getElementById('triageColumn');
-    let aiOpt = triageSel.querySelector('option[value="__ai__"]');
-    if(!aiOpt){
-      aiOpt = document.createElement('option');
-      aiOpt.value = '__ai__';
-      aiOpt.textContent = '🤖 تصنيف الذكاء الاصطناعي';
-      triageSel.appendChild(aiOpt);
-    }
-    triageSel.value = '__ai__';
-    updateStats();
-
+    addAIStatColumn();
     addAIColumnCheckbox();
+    updateStats();
 
   } catch(err){
     showMsg(msg, 'err', '❌ ' + err.message);
@@ -524,14 +588,54 @@ async function runAIClassification(){
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+//  5) تصدير Excel — صفحة "رصد الحالات" + صفحة لكل إحصاء
+// ═══════════════════════════════════════════════════════════
+function sanitizeSheetName(name){
+  let s = (name || 'ورقة').replace(/[:\\\/\?\*\[\]]/g, '_').trim();
+  if(s.length > 31) s = s.slice(0, 31);
+  if(!s) s = 'ورقة';
+  return s;
+}
+
+function uniqueSheetName(wb, baseName){
+  let name = sanitizeSheetName(baseName);
+  let suffix = 1;
+  while(wb.SheetNames.includes(name)){
+    const s = `_${suffix}`;
+    name = sanitizeSheetName(baseName).slice(0, 31 - s.length) + s;
+    suffix++;
+  }
+  return name;
+}
+
+function buildBreakdownData(colKey){
+  const isAI = colKey === '__ai__';
+  const colIndex = isAI ? null : parseInt(colKey, 10);
+
+  const counts = {};
+  fetchedData.rows.forEach((r, idx) => {
+    let val = isAI ? (aiClassifications ? aiClassifications[idx] : null) : r[colIndex];
+    val = (val ?? '').toString().trim();
+    if(val === '') val = '(غير محدد)';
+    counts[val] = (counts[val] || 0) + 1;
+  });
+
+  const total = fetchedData.rows.length;
+  const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  const data = [
+    ['القيمة', 'العدد', 'النسبة %'],
+    ...entries.map(([name, count]) => [name, count, Number(((count/total)*100).toFixed(2))]),
+    ['الإجمالي', total, 100]
+  ];
+  return { data, colName: isAI ? 'تصنيف AI' : fetchedData.headers[colIndex] };
+}
+
 function doFinalExport(){
   const msg = document.getElementById('exportMsg');
   msg.className = 'msg';
 
-  if(!fetchedData){
-    showMsg(msg, 'err', '⚠️ لازم تجيب البيانات الأول.');
-    return;
-  }
+  if(!fetchedData){ showMsg(msg, 'err', '⚠️ لازم تجيب البيانات الأول.'); return; }
 
   const checkedBoxes = Array.from(document.querySelectorAll('#colList input[type="checkbox"]'));
   const selectedIndices = checkedBoxes.filter(cb => cb.checked).map(cb =>
@@ -539,7 +643,7 @@ function doFinalExport(){
   );
 
   if(selectedIndices.length === 0){
-    showMsg(msg, 'err', '⚠️ اختار عمود واحد على الأقل عشان تقدر تصدّر الملف.');
+    showMsg(msg, 'err', '⚠️ اختار عمود واحد على الأقل لصفحة رصد الحالات.');
     return;
   }
 
@@ -549,19 +653,34 @@ function doFinalExport(){
   ));
 
   const wb = XLSX.utils.book_new();
+
+  // ─── الصفحة الرئيسية: رصد الحالات ───
   const sheetData = [headers, ...rows];
   const ws = XLSX.utils.aoa_to_sheet(sheetData);
-
   ws['!cols'] = headers.map((h,i) => {
     const maxLen = Math.max(h.length, ...rows.map(r => String(r[i] ?? '').length));
     return { wch: Math.min(Math.max(maxLen + 2, 10), 60) };
   });
+  XLSX.utils.book_append_sheet(wb, ws, 'رصد الحالات');
 
-  XLSX.utils.book_append_sheet(wb, ws, fetchedData.site);
+  // ─── صفحات الإحصائيات ───
+  const checkedStatCols = Array.from(document.querySelectorAll('#statColsList input:checked'))
+    .map(cb => cb.dataset.statCol);
+
+  let statsCount = 0;
+  checkedStatCols.forEach(colKey => {
+    const { data, colName } = buildBreakdownData(colKey);
+    const statWs = XLSX.utils.aoa_to_sheet(data);
+    statWs['!cols'] = [{ wch: 32 }, { wch: 10 }, { wch: 12 }];
+    const sheetName = uniqueSheetName(wb, colName);
+    XLSX.utils.book_append_sheet(wb, statWs, sheetName);
+    statsCount++;
+  });
+
   const fileName = `${fetchedData.site}_${fetchedData.start}_إلى_${fetchedData.end}.xlsx`;
   XLSX.writeFile(wb, fileName);
 
-  showMsg(msg, 'ok', `✅ تم تحميل الملف بنجاح — عدد الحالات: ${rows.length} — عدد الأعمدة: ${headers.length}`);
+  showMsg(msg, 'ok', `✅ تم التحميل — ${rows.length} حالة · ${statsCount + 1} صفحة (رصد + ${statsCount} إحصاء)`);
 }
 
 function showMsg(el, type, text){
